@@ -17,6 +17,7 @@ import concurrent.futures
 import tqdm
 import psutil
 import modal
+import flet
 
 stub = modal.Stub(
     "parallel_clip",
