@@ -17,12 +17,13 @@ import concurrent.futures
 import tqdm
 import psutil
 import modal
-import flet
+import flet as ft
 
 stub = modal.Stub(
     "parallel_clip",
     image=modal.Image.debian_slim().pip_install("argparse", "moviepy", "numpy", "matplotlib", "tqdm", "joblib", "psutil", "duckdb"),
 )
+
 
 def multiply_colors(frame, dimmed_scenes, current_frame):
     """
@@ -342,7 +343,9 @@ def process_clip(clip):
         avg_values.append(avg_frame)
         diff_values.append(diff_frame)
     end_time = time.time()
-    print(f"Time taken to calculate params (slow): {(end_time - start_time) * 1000:.2f} ms")
+
+
+    #print(f"Time taken to calculate params (slow): {(end_time - start_time) * 1000:.2f} ms")
     return max_values, max_no_outliers_values, avg_values, diff_values
 
 @stub.function(cpu=14)
@@ -702,7 +705,26 @@ def frame_to_time(frame_num):
     return f"{minutes:02d}:{seconds:.2f}"
 
 # @stub.local_entrypoint()
-def main():
+def main(page):
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    # Should gui be separate file?
+    def close_banner(e):
+        page.close(banner)
+        page.add(ft.Text("Action clicked: " + e.control.text))
+
+    action_button_style = ft.ButtonStyle(color=ft.colors.BLUE)
+    banner = ft.Banner(
+        bgcolor=ft.colors.AMBER_100,
+        leading=ft.Icon(ft.icons.WARNING_AMBER_ROUNDED, color=ft.colors.AMBER, size=40),
+        content=ft.Text(
+            value=f"Time taken to calculate params (slow): {(end_time - start_time) * 1000:.2f} ms",
+            color=ft.colors.BLACK,
+        ),
+        actions=[
+            ft.TextButton(text="Okay", style=action_button_style, on_click=close_banner),
+        ],
+    )
+
     parser = argparse.ArgumentParser(description='Multiply color values in a video by a factor.')
     parser.add_argument('input_file', type=str, help='Path to the input video file')
     parser.add_argument('--out', type=str, nargs='?', default=None, help='Path to the output video file')
@@ -829,4 +851,5 @@ def process_input(args):
         copy_subtitles(args.input_file, args.output_file)
             
 if __name__ == "__main__":
-    main()
+    ft.app(main)
+    #main()
